@@ -16,3 +16,4 @@ python-dotenv
 strawberry-graphql[fastapi]
 celery
 flower
+fastapi-mail

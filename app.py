@@ -1,5 +1,6 @@
 import io
 import os
+import asyncio
 import requests
 import pandas as pd
 from celery import Celery
@@ -17,6 +18,10 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from settings import CELERY_SETTINGS
+
+from send_email import send_email_background
+
 logging.config.fileConfig(fname='logging.conf', disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
 
@@ -27,10 +32,9 @@ headers = {
 
 app = FastAPI(max_upload_size=100 * 1024 * 1024)
 celery = Celery(
-    __name__,
-    broker="redis://localhost:6379/0",
-    backend="redis://localhost:6379/0"
+    'email_task',
 )
+celery.config_from_object(CELERY_SETTINGS)
 
 # Allow these methods to be used
 methods = ["GET", "POST", "PUT", "DELETE"]
@@ -77,3 +81,22 @@ def task_create_questions(filepath):
     res = requests.post(url=QUESTION_URL+"/upload", headers=headers, files={'csvFile': open(filepath, 'rb')})
     os.remove(filepath)
     return res.json()
+
+@celery.task(name="send_email")
+def task_send_email(user_email: str):
+    asyncio.run(
+        send_email_background(
+            subject='Hello World',   
+            email_to=user_email, body={
+                "title": "WELCOME", "user": user_email
+            }
+        )
+    )
+    return 'Success'
+
+@app.get('/send-email/confirmation/{user_email}')
+def send_email_backgroundtasks(user_email: str):
+    task = task_send_email.delay(user_email)
+    return {
+        "task_id": task.id
+    }
