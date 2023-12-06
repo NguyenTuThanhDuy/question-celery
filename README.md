@@ -17,6 +17,6 @@
 - <b> Run command to start FastAPI App: </b>
     - <em style="color:red">uvicorn app:app --port 8001 --reload </em>
 - <b> Run command to start Celery Worker: </b>
-    - <em style="color:red">celery -A app.celery worker --loglevel=info</em>
+    - <em style="color:red">celery -A app.celery worker --loglevel=info -P solo</em>
 - <b> Run command to start Celery Monitor: </b>
     - <em style="color:red">celery -A app.celery flower --port=5555</em>

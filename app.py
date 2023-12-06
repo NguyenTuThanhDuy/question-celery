@@ -21,6 +21,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from settings import CELERY_SETTINGS
 
 from send_email import send_email_background
+from validate_model.activate_request import ActivateRequest
 
 logging.config.fileConfig(fname='logging.conf', disable_existing_loggers=False)
 logger = logging.getLogger(__name__)
@@ -83,20 +84,22 @@ def task_create_questions(filepath):
     return res.json()
 
 @celery.task(name="send_email")
-def task_send_email(user_email: str):
+def task_send_email(user_email: str, activate_token: str):
     asyncio.run(
         send_email_background(
-            subject='Hello World',   
+            subject='ACTIVATE ACCOUNT',   
             email_to=user_email, body={
-                "title": "WELCOME", "user": user_email
+                "title": "WELCOME", "user": user_email, "token": activate_token
             }
         )
     )
     return 'Success'
 
-@app.get('/send-email/confirmation/{user_email}')
-def send_email_backgroundtasks(user_email: str):
-    task = task_send_email.delay(user_email)
+@app.post('/send-email/confirmation/{user_email}')
+def send_email_backgroundtasks(user_email: str, request: ActivateRequest):
+    activate_token = request.activate_token
+    print(activate_token)
+    task = task_send_email.delay(user_email, activate_token)
     return {
         "task_id": task.id
     }
