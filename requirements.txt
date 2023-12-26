@@ -17,3 +17,4 @@ strawberry-graphql[fastapi]
 celery
 flower
 fastapi-mail
+jinja2
